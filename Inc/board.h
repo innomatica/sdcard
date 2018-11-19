@@ -31,34 +31,33 @@
 #define ACCEL_CS_HIGH			(ACC_CS_GPIO_Port->BSRR = ACC_CS_Pin)
 
 // SD card
-#define SDCARD_CS_LOW			(SDC_EN_GPIO_Port->BRR = SDC_EN_Pin)
-#define SDCARD_CS_HIGH			(SDC_EN_GPIO_Port->BSRR = SDC_EN_Pin)
-#define SDCARD_TIMEOUT			(500)
-#define SDCARD_TX(a,n)			do{\
-								HAL_SPI_Transmit(&hspi1,a,n,SDCARD_TIMEOUT);\
+#define SDC_CS_LOW				(SDC_EN_GPIO_Port->BRR = SDC_EN_Pin)
+#define SDC_CS_HIGH				(SDC_EN_GPIO_Port->BSRR = SDC_EN_Pin)
+#define SDC_TIMEOUT				(500)
+#define SDC_TX(a,n)				do{\
+								HAL_SPI_Transmit(&hspi1,a,n,SDC_TIMEOUT);\
 								}while(0)
-#define SDCARD_RX(a,n)			do{\
-								HAL_SPI_Receive(&hspi1,a,n,SDCARD_TIMEOUT);\
+#define SDC_RX(a,n)				do{\
+								HAL_SPI_Receive(&hspi1,a,n,SDC_TIMEOUT);\
 								}while(0)
-#define SDCARD_TXRX(a,b,n)		do{\
-								HAL_SPI_TransmitReceive(&hspi1,a,b,n,SDCARD_TIMEOUT);\
+#define SDC_TXRX(a,b,n)			do{\
+								HAL_SPI_TransmitReceive(&hspi1,a,b,n,SDC_TIMEOUT);\
 								}while(0)
-
 
 // Serial Flash
-#define SFLASH_CS_LOW			(MEM_CS_GPIO_Port->BRR = MEM_CS_Pin)
-#define SFLASH_CS_HIGH			(MEM_CS_GPIO_Port->BSRR = MEM_CS_Pin)
-#define SFLASH_TIMEOUT			(500)
-#define SFLASH_TX(a,n)			do{\
-								HAL_SPI_Transmit(&hspi1,a,n,SFLASH_TIMEOUT);\
+#define MEM_CS_LOW				(MEM_CS_GPIO_Port->BRR = MEM_CS_Pin)
+#define MEM_CS_HIGH				(MEM_CS_GPIO_Port->BSRR = MEM_CS_Pin)
+#define MEM_TIMEOUT				(500)
+#define MEM_TX(a,n)				do{\
+								HAL_SPI_Transmit(&hspi1,a,n,MEM_TIMEOUT);\
 								}while(0)
-#define SFLASH_RX(a,n)			do{\
-								HAL_SPI_Receive(&hspi1,a,n,SFLASH_TIMEOUT);\
+#define MEM_RX(a,n)				do{\
+								HAL_SPI_Receive(&hspi1,a,n,MEM_TIMEOUT);\
 								}while(0)
-#define SFLASH_TXRX(a,b,n)		do{\
-								HAL_SPI_TransmitReceive(&hspi1,a,b,n,SFLASH_TIMEOUT);\
+#define MEM_TXRX(a,b,n)			do{\
+								HAL_SPI_TransmitReceive(&hspi1,a,b,n,MEM_TIMEOUT);\
 								}while(0)
-#define SFLASH_NUM_SECTORS		(0x100)
+#define MEM_NUM_SECTORS			(0x100)
 
 // SysTick interrupt control (LL_SYStICK_EnableIT/LL_SYSTICK_DisableIT)
 #define SYSTICK_ENABLE_IT		do{\
@@ -85,7 +84,6 @@
 #define BQUEUE_ENTER_CS			USART1_DISABLE_RX_IT
 #define BQUEUE_EXIT_CS			USART1_ENABLE_RX_IT
 
-
 // debug
 #define DEBUG_OUTPUT			(1)
 #define UNIT_TEST				(0)
@@ -98,10 +96,29 @@
 
 #define	SAMPLE_FREQ				(16000)
 
+typedef struct
+{
+	uint8_t r1;
+	uint8_t r2;
+	uint8_t r3;
+	uint8_t r4;
+	uint8_t r5;
+} SDC_Response;
+
+#define SDC_CMD_LEN				(6)
+#define MSecDelay(x)			do{HAL_Delay(x);}while(0);
+
 extern SPI_HandleTypeDef hspi1;
+
 /// General purpose functions
 void USB_Printf(const char* format,...);
 void UART_Printf(const char* format,...);
 void USecDelay(unsigned usec);
+
+void SerialComm_Init(void);
+void SerialComm_SendByteArray(uint8_t *buffer, int size);
+
+SDC_Response SDC_SendCommand(uint8_t cmd, uint32_t arg, uint8_t crc, uint8_t rlen);
+bool SDC_WaitByte(uint8_t byte, uint16_t timeout);
 
 #endif	// __BOARD_H

@@ -64,7 +64,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <string.h>
 #include "ff_gen_drv.h"
-
+#include "SDCard.h"
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 
@@ -110,8 +110,19 @@ DSTATUS USER_initialize (
 )
 {
 	/* USER CODE BEGIN INIT */
+	if(SDCard_Init())
+	{
+		return RES_OK;
+	}
+	else
+	{
+		return STA_NOINIT;
+	}
+
+#if 0
 	Stat = STA_NOINIT;
 	return Stat;
+#endif
 	/* USER CODE END INIT */
 }
 

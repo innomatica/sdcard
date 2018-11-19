@@ -14,53 +14,32 @@
 #include <stdint.h>
 #include "board.h"
 
-/// SDCard command set
-#define SD_CMD_GO_IDLE_STATE			0
-#define SD_CMD_SEND_OP_COND				1
-#define SD_CMD_SWITCH_FUNC				6
-#define SD_CMD_SEND_IF_COND				8
-#define SD_CMD_SEND_CSD					9
-#define SD_CMD_SEND_CID					10
-#define SD_CMD_STOP_TRANSMISSION		12
-#define SD_CMD_SEND_STATUS				13
-#define SD_CMD_SET_BLOCKLEN				16		// only for CMD42
-#define SD_CMD_READ_SINGLE_BLOCK		17
-#define SD_CMD_READ_MULTIPLE_BLOCK		18
-#define SD_CMD_WRITE_BLOCK				24
-#define SD_CMD_WRITE_MULTIPLE_BLOCK		25
-#define SD_CMD_PROGRAM_CSD				27
-#define SD_CMD_ERASE_WR_BLK_START_ADDR	32
-#define SD_CMD_ERASE_WR_BLK_END_ADDR	33
-#define SD_CMD_ERASE					38
-#define SD_CMD_LOCK_UNLOCK				42
-#define SD_CMD_APP_CMD					55
-#define SD_CMD_GEN_CMD					56
-#define SD_CMD_READ_OCR					58
-#define SD_CMD_CRC_ON_OFF				59
-#define SD_ACMD_SD_STATUS				13
-#define SD_ACMD_SET_WR_BLK_ERASE_COUNT	23
-#define SD_ACMD_SD_SEND_OP_COND			41
-#define SD_ACMD_SEND_SCR				51
+#define ADDR_TO_BLOCK(x)				((x)>>9)
+#define BLOCK_TO_ADDR(x)				((x)<<9)
+
+#define SD_BLOCK_SIZE					(512)
+
+typedef enum 
+{
+	SDCARD_READY,
+	SDCARD_NOINIT,
+	SDCARD_NODISK
+} SDStatus;;
 
 /// Initialize device
-void SDCard_Init(void);
-/// Check if the device is busy
-bool SDCard_IsBusy(void);
-/// Checi if the device is writable
-bool SDCard_IsWritable(void);
-/// Read the status byte
-uint8_t SDCard_ReadStatus(void);
-/// Erase one sector
-void SDCard_EraseSector(uint32_t sector);
-/// Read data
-void SDCard_Read(uint32_t addr, uint8_t *buff, uint16_t len);
-/// Write data
-void SDCard_Write(uint32_t addr, uint8_t *buff, uint16_t len) __attribute((weak));
-/// Read data by sector unit
-void SDCard_ReadSector(uint32_t sector, uint8_t *buff);
-/// Write data by sector unit
-void SDCard_WriteSector(uint32_t sector, uint8_t *buff);
+bool SDCard_Init(void);
+/// Read blocks
+bool SDCard_ReadBlock(uint32_t block, uint8_t *buff);
+/// Write blocks
+bool SDCard_WriteBlock(uint32_t block, uint8_t *buff);
+/// Get status
+SDStatus  SDCard_GetStatus(void);
+/// Set status
+void SDCard_SetStatus(SDStatus status);
+/// Get capacity in MB
+uint32_t SDCard_GetCapacityMB(void);
 /// Unit test
 void SDCard_UnitTest(void);
+
 
 #endif // __SDCARD_H

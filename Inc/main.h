@@ -70,6 +70,9 @@
 #define AMP_EN_GPIO_Port GPIOA
 #define SDC_EN_Pin GPIO_PIN_0
 #define SDC_EN_GPIO_Port GPIOB
+#define SDC_EX_Pin GPIO_PIN_1
+#define SDC_EX_GPIO_Port GPIOB
+#define SDC_EX_EXTI_IRQn EXTI0_1_IRQn
 
 /* ########################## Assert Selection ############################## */
 /**

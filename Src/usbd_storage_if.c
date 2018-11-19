@@ -51,7 +51,7 @@
 #include "usbd_storage_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include "SDCard.h"
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -93,7 +93,7 @@
 
 #define STORAGE_LUN_NBR                  1
 #define STORAGE_BLK_NBR                  0x10000
-#define STORAGE_BLK_SIZ                  0x200
+#define STORAGE_BLK_SIZ                  0x200			// 512 bytes
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
 
@@ -207,7 +207,14 @@ USBD_StorageTypeDef USBD_Storage_Interface_fops_FS =
 int8_t STORAGE_Init_FS(uint8_t lun)
 {
 	/* USER CODE BEGIN 2 */
-	return (USBD_OK);
+	if(SDCard_GetStatus() == SDCARD_READY)
+	{
+		return (USBD_OK);
+	}
+	else
+	{
+		return USBD_FAIL;
+	}
 	/* USER CODE END 2 */
 }
 
@@ -221,8 +228,14 @@ int8_t STORAGE_Init_FS(uint8_t lun)
 int8_t STORAGE_GetCapacity_FS(uint8_t lun, uint32_t *block_num, uint16_t *block_size)
 {
 	/* USER CODE BEGIN 3 */
+	// FIXME replace the numbers below with SD card info
+	
+	*block_num = SDCard_GetCapacityMB()<<11;
+	*block_size = SD_BLOCK_SIZE;
+#if 0
 	*block_num  = STORAGE_BLK_NBR;
 	*block_size = STORAGE_BLK_SIZ;
+#endif
 	return (USBD_OK);
 	/* USER CODE END 3 */
 }
@@ -235,7 +248,18 @@ int8_t STORAGE_GetCapacity_FS(uint8_t lun, uint32_t *block_num, uint16_t *block_
 int8_t STORAGE_IsReady_FS(uint8_t lun)
 {
 	/* USER CODE BEGIN 4 */
+	if(SDCard_GetStatus() == SDCARD_READY)
+	{
+		return USBD_OK;
+	}
+	else
+	{
+		return USBD_FAIL;
+	}
+
+#if 0
 	return (USBD_OK);
+#endif
 	/* USER CODE END 4 */
 }
 
@@ -259,6 +283,8 @@ int8_t STORAGE_IsWriteProtected_FS(uint8_t lun)
 int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
 	/* USER CODE BEGIN 6 */
+	// ignore lun which is always zero, same with blk_len
+	SDCard_ReadBlock(blk_addr, buf);
 	return (USBD_OK);
 	/* USER CODE END 6 */
 }
@@ -271,6 +297,7 @@ int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t bl
 int8_t STORAGE_Write_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
 	/* USER CODE BEGIN 7 */
+	SDCard_WriteBlock(blk_addr, buf);
 	return (USBD_OK);
 	/* USER CODE END 7 */
 }
@@ -283,7 +310,10 @@ int8_t STORAGE_Write_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t b
 int8_t STORAGE_GetMaxLun_FS(void)
 {
 	/* USER CODE BEGIN 8 */
+	return ((SDCard_GetCapacityMB() << 11) - 1);
+#if 0
 	return (STORAGE_LUN_NBR - 1);
+#endif
 	/* USER CODE END 8 */
 }
 

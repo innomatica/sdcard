@@ -80,6 +80,105 @@ void SerialComm_SendByteArray(uint8_t *buffer, int size)
 	HAL_UART_Transmit(&huart1, buffer, size, 1000);
 }
 
+/** Sending dummy (0xff) data while waiting for the target byte to be arrived.
+ *
+ *	\param byte target byte
+ *	\param timeout
+ */
+bool SDC_WaitByte(uint8_t byte, uint16_t timeout)
+{
+	uint8_t txb = 0xff, rxb;
+
+	while(1)
+	{
+		// send 0xff, read byte
+		SDC_TXRX(&txb, &rxb, 1);
+
+		// target byte received or timeout occurred
+		if((rxb == byte) || (timeout == 0))
+		{
+			break;
+		}
+		else
+		{
+			timeout--;
+		}
+	}
+
+	// target byte received
+	if(rxb == byte)
+	{
+		return true;
+	}
+	// timeout occurred
+	else
+	{
+		return false;
+	}
+}
+
+
+SDC_Response SDC_SendCommand(uint8_t cmd, uint32_t arg, uint8_t crc, uint8_t rlen)
+{
+	uint8_t txb[SDC_CMD_LEN], rxb[SDC_CMD_LEN];
+	// Ncr 8 bytes
+	uint8_t timeout = 0x08;
+
+	SDC_Response r = {0xff,0xff,0xff,0xff,0xff};
+
+	// command byte
+	txb[0] = cmd | 0x40;
+	// payload word
+	txb[1] = (uint8_t)(arg >> 24);
+	txb[2] = (uint8_t)(arg >> 16);
+	txb[3] = (uint8_t)(arg >> 8);
+	txb[4] = (uint8_t)(arg >> 0);
+	// checksum byte
+	txb[5] =  crc | 0x01;
+
+	// transmit command packet
+	SDC_TX(txb, SDC_CMD_LEN);
+
+	// clear tx buffer and rx buffer
+	for(int i = 0; i < rlen; i++)
+	{
+		txb[i] = rxb[i] = 0xff;
+	}
+	// response must be received within Ncr
+	do
+	{
+		SDC_TXRX(txb, rxb, 1);
+		timeout--;
+	}
+	while((rxb[0] == 0xff) && timeout);
+
+	if(timeout != 0)
+	{
+		// store the value
+		r.r1 = rxb[0];
+		// remaining response length
+		rlen--;
+
+		// need more bytes to receive
+		if(rlen)
+		{
+			// get the rest of the respnse
+			SDC_TXRX(txb, rxb, rlen);
+			// store them in the structure
+			r.r2 = rxb[0];
+			r.r3 = rxb[1];
+			r.r4 = rxb[2];
+			r.r5 = rxb[3];
+		}
+	}
+	else
+	{
+		DbgPrintf("\r\n<ERR>SDC_SendCommand timeout");
+	}
+
+	return r;
+}
+
 #if UNIT_TEST
 
 #endif

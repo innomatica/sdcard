@@ -55,11 +55,10 @@
 /* USER CODE BEGIN Includes */
 #include "board.h"
 #include "stdbool.h"
+#include "SDCard.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
-CRC_HandleTypeDef hcrc;
-
 DAC_HandleTypeDef hdac;
 DMA_HandleTypeDef hdma_dac_ch1;
 
@@ -76,7 +75,9 @@ UART_HandleTypeDef huart1;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 bool btn_int_flag = false;
+bool sdc_int_flag = false;
 uint8_t btn_debounce;
+uint8_t sdc_debounce;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -89,7 +90,6 @@ static void MX_I2S2_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM6_Init(void);
-static void MX_CRC_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -139,7 +139,6 @@ int main(void)
 	MX_I2C1_Init();
 	MX_FATFS_Init();
 	MX_TIM6_Init();
-	MX_CRC_Init();
 	/* USER CODE BEGIN 2 */
 	System_Init();
 	/* USER CODE END 2 */
@@ -222,26 +221,6 @@ void SystemClock_Config(void)
 
 	/* SysTick_IRQn interrupt configuration */
 	HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
-}
-
-/* CRC init function */
-static void MX_CRC_Init(void)
-{
-
-	hcrc.Instance = CRC;
-	hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_DISABLE;
-	hcrc.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_DISABLE;
-	hcrc.Init.GeneratingPolynomial = 9;
-	hcrc.Init.CRCLength = CRC_POLYLENGTH_7B;
-	hcrc.Init.InitValue = 0;
-	hcrc.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
-	hcrc.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
-	hcrc.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
-	if (HAL_CRC_Init(&hcrc) != HAL_OK)
-	{
-		_Error_Handler(__FILE__, __LINE__);
-	}
-
 }
 
 /* DAC init function */
@@ -458,7 +437,16 @@ static void MX_GPIO_Init(void)
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(SDC_EN_GPIO_Port, &GPIO_InitStruct);
 
+	/*Configure GPIO pin : SDC_EX_Pin */
+	GPIO_InitStruct.Pin = SDC_EX_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(SDC_EX_GPIO_Port, &GPIO_InitStruct);
+
 	/* EXTI interrupt init*/
+	HAL_NVIC_SetPriority(EXTI0_1_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(EXTI0_1_IRQn);
+
 	HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
 	HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
@@ -471,6 +459,11 @@ void HAL_SYSTICK_Callback(void)
 	{
 		btn_debounce--;
 	}
+
+	if(sdc_debounce)
+	{
+		sdc_debounce--;
+	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
@@ -479,6 +472,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		btn_int_flag = true;
 		btn_debounce = 255;
+	}
+	else if((GPIO_Pin == SDC_EX_Pin) && (sdc_debounce == 0))
+	{
+		sdc_int_flag = true;
+		sdc_debounce = 255;
 	}
 }
 
@@ -489,16 +487,38 @@ void Event_Handler(void)
 	{
 		DbgPrintf("\r\nButton pressed");
 		btn_int_flag = false;
+
+	}
+	else if(sdc_int_flag)
+	{
+		if(HAL_GPIO_ReadPin(SDC_EX_GPIO_Port, SDC_EX_Pin))
+		{
+			SDCard_SetStatus(SDCARD_NODISK);
+			DbgPrintf("\r\nSD card removed");
+		}
+		else
+		{
+			DbgPrintf("\r\nSD card inserted");
+			// FIXME: quick and dirty method of debouncing
+			HAL_Delay(700);
+
+			if(SDCard_Init())
+			{
+				DbgPrintf("\r\nSD card initialized");
+			}
+			else
+			{
+				DbgPrintf("\r\nSD card initialization failed");
+			}
+		}
+		sdc_int_flag = false;
 	}
 }
 
 
 void System_Init(void)
 {
-	uint32_t
 	DbgPrintf("\r\nSystem Init");
-	HAL_CRC_Accumulate
-
 }
 /* USER CODE END 4 */
 
