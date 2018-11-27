@@ -1,3 +1,4 @@
+/* USER CODE BEGIN Header */
 /**
  ******************************************************************************
   * @file    user_diskio.c
@@ -45,6 +46,7 @@
   *
   ******************************************************************************
   */
+/* USER CODE END Header */
 
 #ifdef USE_OBSOLETE_USER_CODE_SECTION_0
 /*
@@ -136,8 +138,19 @@ DSTATUS USER_status (
 )
 {
 	/* USER CODE BEGIN STATUS */
+	if(SDCard_GetStatus() == SDCARD_READY)
+	{
+		return RES_OK;
+	}
+	else
+	{
+		return STA_NOINIT;
+	}
+
+#if 0
 	Stat = STA_NOINIT;
 	return Stat;
+#endif
 	/* USER CODE END STATUS */
 }
 
@@ -157,7 +170,36 @@ DRESULT USER_read (
 )
 {
 	/* USER CODE BEGIN READ */
-	return RES_OK;
+	bool flag = true;
+	BYTE *pbuf = buff;
+	UINT idx = 0;
+
+	while(idx < count)
+	{
+		// block size should be the same as sector size
+		if(SDCard_ReadBlock(sector, (uint8_t *)pbuf) == false)
+		{
+			// some cheap sdcard may not work at first try
+			if(SDCard_ReadBlock(sector, (uint8_t *)pbuf) == false)
+			{
+				flag = false;
+				break;
+			}
+		}
+		// next sector
+		sector++;
+		pbuf = pbuf + _MIN_SS;
+		idx++;
+	}
+
+	if(flag)
+	{
+		return RES_OK;
+	}
+	else
+	{
+		return RES_ERROR;
+	}
 	/* USER CODE END READ */
 }
 
@@ -179,7 +221,36 @@ DRESULT USER_write (
 {
 	/* USER CODE BEGIN WRITE */
 	/* USER CODE HERE */
-	return RES_OK;
+	bool flag = true;
+	BYTE *pbuf = (BYTE*)buff;
+	UINT idx = 0;
+
+	while(idx < count)
+	{
+		// block size should be the same as sector size
+		if(SDCard_WriteBlock(sector, (uint8_t *)pbuf) == false)
+		{
+			// some cheap sdcard may not work at first try
+			if(SDCard_WriteBlock(sector, (uint8_t *)pbuf) == false)
+			{
+				flag = false;
+				break;
+			}
+		}
+		// next sector
+		sector++;
+		pbuf = pbuf + _MIN_SS;
+		idx++;
+	}
+
+	if(flag)
+	{
+		return RES_OK;
+	}
+	else
+	{
+		return RES_ERROR;
+	}
 	/* USER CODE END WRITE */
 }
 #endif /* _USE_WRITE == 1 */
@@ -200,6 +271,41 @@ DRESULT USER_ioctl (
 {
 	/* USER CODE BEGIN IOCTL */
 	DRESULT res = RES_ERROR;
+
+	switch(cmd)
+	{
+	case CTRL_SYNC:
+		if(SDCard_Sync())
+		{
+			res = RES_OK;
+		}
+		break;
+
+	case GET_SECTOR_COUNT:
+		*((DWORD*)buff) = (DWORD)(SDCard_GetCapacityMB()<<1);
+		res = RES_OK;
+		break;
+
+	case GET_BLOCK_SIZE:
+		// sector size should be equal to erase block size;
+		*((DWORD*)buff) = 1;
+		res = RES_OK;
+		break;
+
+	case GET_SECTOR_SIZE:
+		// this shoould not be called since _MIN_SS = _MAX_SS
+		*((DWORD*)buff) = _MIN_SS;
+		res = RES_OK;
+		break;
+
+	case CTRL_TRIM:
+		// do not support. be sure to set FF_USE_TRIM = 0
+		break;
+
+	default:
+		break;
+	}
+
 	return res;
 	/* USER CODE END IOCTL */
 }

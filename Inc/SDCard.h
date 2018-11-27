@@ -19,7 +19,7 @@
 
 #define SD_BLOCK_SIZE					(512)
 
-typedef enum 
+typedef enum
 {
 	SDCARD_READY,
 	SDCARD_NOINIT,
@@ -38,6 +38,8 @@ SDStatus  SDCard_GetStatus(void);
 void SDCard_SetStatus(SDStatus status);
 /// Get capacity in MB
 uint32_t SDCard_GetCapacityMB(void);
+/// Sync data
+bool SDCard_Sync(void);
 /// Unit test
 void SDCard_UnitTest(void);
 

@@ -93,7 +93,7 @@
 
 #define STORAGE_LUN_NBR                  1
 #define STORAGE_BLK_NBR                  0x10000
-#define STORAGE_BLK_SIZ                  0x200			// 512 bytes
+#define STORAGE_BLK_SIZ                  0x200
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
 
@@ -229,7 +229,7 @@ int8_t STORAGE_GetCapacity_FS(uint8_t lun, uint32_t *block_num, uint16_t *block_
 {
 	/* USER CODE BEGIN 3 */
 	// FIXME replace the numbers below with SD card info
-	
+
 	*block_num = SDCard_GetCapacityMB()<<11;
 	*block_size = SD_BLOCK_SIZE;
 #if 0

@@ -1,6 +1,8 @@
-export PATH:=/opt/gcc-arm-none-eabi-7-2017-q4-major/bin:$(PATH)
-#GCC_PATH = /opt/gcc-arm-none-eabi-7-2017-q4-major/bin
+# gcc toolchain
+export PATH:=/opt/gcc-arm-none-eabi/bin:$(PATH)
 #.DEFAULT_GOAL := all
+# terminal
+TERM = mate-terminal
 
 # additional source files
 C_SOURCES += \
@@ -64,12 +66,13 @@ oocd:
 		-f interface/jlink -f target/stm32l0.cfg
 
 gdbs:
-	/opt/SEGGER/JLink/JLinkGDBServerExe -device STM32L072CB -if SWD -speed 4000 &
+	$(TERM) -e '/opt/SEGGER/JLink/JLinkGDBServerCLExe -device STM32L072CB -if SWD -speed 4000' &
+	#/opt/SEGGER/JLink/JLinkGDBServerExe -device STM32L072CB -if SWD -speed 4000 &
 
 gdb:
-	arm-none-eabi-gdb
+	$(TERM) -e /opt/gcc-arm-none-eabi/bin/arm-none-eabi-gdb &
 
 cgdb:
-	cgdb -d arm-none-eabi-gdb
+	$(TERM) -e 'cgdb -d /opt/gcc-arm-none-eabi/bin/arm-none-eabi-gdb' &
 
 debug: gdbs gdb

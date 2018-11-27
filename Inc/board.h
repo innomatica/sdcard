@@ -6,7 +6,7 @@
  */
 #include <stdint.h>
 #include <stdbool.h>
-#include "stm32l0xx_hal.h"
+#include "main.h"
 
 #define LD1_ON					(LD1_GPIO_Port->BSRR = LD1_Pin)
 #define LD1_OFF					(LD1_GPIO_Port->BRR = LD1_Pin)
@@ -86,7 +86,7 @@
 
 // debug
 #define DEBUG_OUTPUT			(1)
-#define UNIT_TEST				(0)
+#define UNIT_TEST				(1)
 
 #if DEBUG_OUTPUT
 #define DbgPrintf(x,arg...)		UART_Printf(x,##arg)

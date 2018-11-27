@@ -288,7 +288,7 @@ bool SDCard_ReadBlock(uint32_t block, uint8_t *buff)
 		buff[i] = 0xff;
 	}
 	// wait until the card is idle
-	if(SDC_WaitByte(0xff, 0xffff))
+	if(SDC_WaitByte(0xff, 0xff))
 	{
 		// CMD17: READ_SINGLE_BLOCK
 		r = SDC_SendCommand(SD_CMD17, block, 0xff, 1);
@@ -297,7 +297,7 @@ bool SDCard_ReadBlock(uint32_t block, uint8_t *buff)
 		if(r.r1 == 0x00)
 		{
 			// waiting for the data token
-			if(SDC_WaitByte(DATA_TOKEN_CMD17, 0xffff) == true)
+			if(SDC_WaitByte(DATA_TOKEN_CMD17, 0xff))
 			{
 				// read out the block
 				SDC_RX(buff, SD_BLOCK_SIZE);
@@ -305,6 +305,10 @@ bool SDCard_ReadBlock(uint32_t block, uint8_t *buff)
 				SDC_RX(crc16, 2);
 				// skip the CRC check
 				flag = true;
+			}
+			else
+			{
+				DbgPrintf("\r\n<ERR>SDCard_ReadBlock: DTOKEN timeout");
 			}
 		}
 		else
@@ -343,7 +347,7 @@ bool SDCard_WriteBlock(uint32_t block, uint8_t *buff)
 	// select the device
 	SDC_CS_LOW;
 	// wait until the card is idle
-	if(SDC_WaitByte(0xff, 0xffff))
+	if(SDC_WaitByte(0xff, 0xff))
 	{
 		// CMD24: WRITE_BLOCK
 		r = SDC_SendCommand(SD_CMD24, block, 0xff, 1);
@@ -447,6 +451,7 @@ bool SDCard_ReadCSD(void)
 					u32val2 = ((buff[9] & 0x03)<<1) + ((buff[10] & 0x80) >> 7);
 					// memory capacity in MB
 					cardInfo.capacityMb = (u32val1 +1) * (2<<(u32val2+2));
+
 					if(cardInfo.blockSize == 512)
 					{
 						cardInfo.capacityMb = cardInfo.capacityMb>>1;
@@ -499,11 +504,17 @@ uint32_t SDCard_GetCapacityMB(void)
 	return cardInfo.capacityMb;
 }
 
+bool SDCard_Sync(void)
+{
+	return( SDC_WaitByte(0xff, 0xffff) );
+}
+
 #if UNIT_TEST
 
-#define MAX_BLOCK_NUMBER	10
+#define MAX_BLOCK_NUMBER	5
 void SDCard_UnitTest(void)
 {
+	bool flag = true;
 	int i;
 	uint8_t buff[SD_BLOCK_SIZE];
 
@@ -523,6 +534,7 @@ void SDCard_UnitTest(void)
 		i++;
 	}
 
+#if 0
 	DbgPrintf("\r\nSDCard_WriteBlock....");
 	i = 0;
 	while(i < MAX_BLOCK_NUMBER)
@@ -535,7 +547,7 @@ void SDCard_UnitTest(void)
 		}
 		i++;
 	}
-
+#endif
 	DbgPrintf("\r\nSDCard_ReadBlock....");
 	i = 0;
 	while(i < MAX_BLOCK_NUMBER)
@@ -544,34 +556,38 @@ void SDCard_UnitTest(void)
 		if(SDCard_ReadBlock(i, buff) == false)
 		{
 			DbgPrintf("\r\nSDCard_ReadBlock failed");
-			break;
+			//flag = false;
+			//break;
 		}
 		i++;
 	}
 
-	// print out the current buffer contents
-	i = 0;
-	DbgPrintf("\r\n---------------------------------------\r\n");
-	while(i < SD_BLOCK_SIZE)
+	if(flag)
 	{
-		if((i % 16) == 0)
+		// print out the current buffer contents
+		i = 0;
+		DbgPrintf("\r\n---------------------------------------\r\n");
+		while(i < SD_BLOCK_SIZE)
 		{
-			DbgPrintf("(%04d) ", i);
-		}
+			if((i % 16) == 0)
+			{
+				DbgPrintf("(%04d) ", i);
+			}
 
-		DbgPrintf("%02X", buff[i++]);
+			DbgPrintf("%02X", buff[i++]);
 
-		if((i % 16) == 0)
-		{
-			DbgPrintf("\r\n");
-		}
-		else if((i % 8) == 0)
-		{
-			DbgPrintf(" - ");
-		}
-		else
-		{
-			DbgPrintf(".");
+			if((i % 16) == 0)
+			{
+				DbgPrintf("\r\n");
+			}
+			else if((i % 8) == 0)
+			{
+				DbgPrintf(" - ");
+			}
+			else
+			{
+				DbgPrintf(".");
+			}
 		}
 	}
 }
