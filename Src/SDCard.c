@@ -288,7 +288,7 @@ bool SDCard_ReadBlock(uint32_t block, uint8_t *buff)
 		buff[i] = 0xff;
 	}
 	// wait until the card is idle
-	if(SDC_WaitByte(0xff, 0xff))
+	if(SDC_WaitByte(0xff, 0xffff))
 	{
 		// CMD17: READ_SINGLE_BLOCK
 		r = SDC_SendCommand(SD_CMD17, block, 0xff, 1);
@@ -347,7 +347,7 @@ bool SDCard_WriteBlock(uint32_t block, uint8_t *buff)
 	// select the device
 	SDC_CS_LOW;
 	// wait until the card is idle
-	if(SDC_WaitByte(0xff, 0xff))
+	if(SDC_WaitByte(0xff, 0xffff))
 	{
 		// CMD24: WRITE_BLOCK
 		r = SDC_SendCommand(SD_CMD24, block, 0xff, 1);
