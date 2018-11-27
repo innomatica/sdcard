@@ -593,6 +593,7 @@ void Event_Handler(void)
 		// this is bipolar interrupt
 		HAL_Delay(SDC_DEBOUNCE);
 
+		// card is removed
 		if(HAL_GPIO_ReadPin(SDC_EX_GPIO_Port, SDC_EX_Pin))
 		{
 			// reset SDCard state
@@ -601,6 +602,7 @@ void Event_Handler(void)
 			FATFS_UnLinkDriver(USERPath);
 			DbgPrintf("\r\nSD card removed");
 		}
+		// card is inserted
 		else
 		{
 			DbgPrintf("\r\nSD card inserted");
